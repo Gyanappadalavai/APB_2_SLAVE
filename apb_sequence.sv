@@ -18,86 +18,102 @@ virtual task body();
    endtask :body
 endclass
 
-class apb_enb_0 extends apb_sequence;
-  `uvm_object_utils(apb_enb_0)
+class writesl0 extends apb_sequence;
+  `uvm_object_utils(writesl0)
   apb_sequence_item item;
 
-  function new(string name = "apb_enb_0");
+  function new(string name = "writesl0");
 		super.new();
 	endfunction
 
  task body();
-   repeat(2)begin
-     item = apb_sequence_item::type_id::create("item");
-     wait_for_grant();
-     item.i_penable = 0;
-     item.randomize() ;
-     send_request(item);
-     wait_for_item_done();
-   end
+	 `uvm_do_with(item, {item.transfer == 1; item.read_write==1  ,item.apb_write_paddr[8]==0;})    
+ endtask: body
 endtask
 
-endclass: apb_enb_0
+endclass: writesl0
 
-//1 Write then read to w/r register
-class apb_wr_seq extends apb_sequence;
+//read from slave 0
+class readsl0 extends apb_sequence;
 
-  `uvm_object_utils(apb_wr_seq)
+  `uvm_object_utils(readsl0)
   apb_sequence_item  item;
 
-  function new (string name= "apb_wr_seq");
+  function new (string name= "readsl0");
     super.new(name);
   endfunction: new
 
-  task body();
-     `uvm_do_with(item, {item.i_pwrite == 1; item.i_paddr[`AW-1:`ADDR_LSB] ==  2;})
-     `uvm_do_with(item, {item.i_pwrite == 0; item.i_paddr[`AW-1:`ADDR_LSB] ==  2;}) 
-     `uvm_do_with(item, {item.i_pwrite == 1; item.i_paddr[`AW-1:`ADDR_LSB] ==  0;})
-     `uvm_do_with(item, {item.i_pwrite == 0; item.i_paddr[`AW-1:`ADDR_LSB] ==  0;}) 
+   task body();
+	   `uvm_do_with(item, {item.transfer == 1; item.read_write==0  ,item.apb_write_paddr[8]==0;})    
  endtask: body
-endclass: apb_wr_seq
+endclass: readsl0
 
 
 //2 Write two times to same register and read from that register
-class apb_wwr_seq extends apb_sequence;
+class writesl1 extends apb_sequence;
 
-  `uvm_object_utils(apb_wwr_seq)
+  `uvm_object_utils(writesl1)
   apb_sequence_item  item;
 
-  function new (string name= "apb_wwr_seq");
+  function new (string name= "writesl1");
     super.new(name);
   endfunction: new
 
-  task body();
-     
-     `uvm_do_with(item,{item.i_pwrite == 1; item.i_paddr[`AW-1:`ADDR_LSB] ==  2; i_pwdata==32'h09;})
-     item.i_pwdata.rand_mode(0);
-     `uvm_do_with(item,{item.i_pwrite == 1; item.i_paddr[`AW-1:`ADDR_LSB] ==  2; i_pwdata==32'h07;}) 
-    
-     `uvm_do_with(item,{item.i_pwrite == 0; item.i_paddr[`AW-1:`ADDR_LSB] ==  2;}) 
-  endtask: body
-endclass: apb_wwr_seq
+   task body();
+	   `uvm_do_with(item, {item.transfer == 1; item.read_write==1  ,item.apb_write_paddr[8]==1;})    
+ endtask: body
+endclass: writesl1
 
 
 
 //3 Write two times to same register
 
-class apb_ww_seq extends apb_sequence;
+class readsel1 extends apb_sequence;
 
-  `uvm_object_utils(apb_ww_seq)
+  `uvm_object_utils(readsel1)
   apb_sequence_item  item;
 
-  function new (string name= "apb_ww_seq");
+  function new (string name= "readsel1");
     super.new(name);
   endfunction: new
 
-  task body();
-     
-     `uvm_do_with(item,{item.i_pwrite == 1; item.i_paddr[`AW-1:`ADDR_LSB] inside {[0:2]}; })
-     
-     
-  endtask: body
-endclass: apb_ww_seq
+ task body();
+	 `uvm_do_with(item, {item.transfer == 1; item.read_write==0  ,item.apb_write_paddr[8]==1;})    
+ endtask: body
+endclass: readsel1
 
+
+
+class writeread0 extends apb_sequence;
+
+  `uvm_object_utils(writeread0)
+  apb_sequence_item  item;
+
+  function new (string name= "writeread0");
+    super.new(name);
+  endfunction: new
+
+ task body();
+	 `uvm_do_with(item, {item.transfer == 1; item.read_write==1  ,item.apb_write_paddr[8]==0;}) 
+	 `uvm_do_with(item, {item.transfer == 1; item.read_write==0  ,item.apb_write_paddr[8]==0;})    
+
+ endtask: body
+endclass: writeread0
+
+class writeread1 extends apb_sequence;
+
+ `uvm_object_utils(writeread1)
+  apb_sequence_item  item;
+
+  function new (string name= "writeread0");
+    super.new(name);
+  endfunction: new
+
+ task body();
+	 `uvm_do_with(item, {item.transfer == 1; item.read_write==1  ,item.apb_write_paddr[8]==1;}) 
+	 `uvm_do_with(item, {item.transfer == 1; item.read_write==0  ,item.apb_write_paddr[8]==1;})    
+
+ endtask: body
+endclass: writeread1
 
 
