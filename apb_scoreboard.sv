@@ -51,7 +51,7 @@ function void apb_scoreboard::build_phase(uvm_phase phase);
 
   ip_scb_imp = new("ip_scb_imp", this);
   op_scb_imp = new("op_scb_imp", this);
- if (!uvm_config_db#(virtual apb_interface.mon_ip_mp)::get(this,"", "vif_mon_in",ip_vif))
+	if (!uvm_config_db#(virtual apb_interface.mon_ip_mp)::get(this,"", "vif",ip_vif))
       `uvm_fatal("APB_SB", "APB interf.CE handle not found in config database!")
 
 endfunction
@@ -100,12 +100,8 @@ task apb_scoreboard::run_phase(uvm_phase phase);
   apb_sequence_item in_mon;
   apb_sequence_item out_mon;
   
-  localparam N_REG = 2**(`AW-`ADDR_LSB);  // Max. number of registers supported in the address space
-  logic [`DW-1:0] apb_reg[N_REG];
- 
-
- // Assign all RO/RO+ registers
-   apb_reg[3] = 32'hDEAD_BEEF ;  // Constant value
+	bit [7:0]mem0[4:0];
+	bit [7:0]mem1[4:0];
  
   forever begin
          
@@ -116,98 +112,24 @@ task apb_scoreboard::run_phase(uvm_phase phase);
       out_mon = actual_op.pop_front();
         
 
-      if (!(ip_vif.PRST)) begin
-        apb_reg[0] = 0;
-        apb_reg[1] = 0;
-        apb_reg[2] = 0;
+	if (!(ip_vif.presetn)) begin
+       
 
         // APB read ports
-        in_mon.o_prdata = 0;
-        in_mon.o_pready = 0;
+        in_mon.transfer = 0;
+        in_mon.read_write = 0;
         value_display(in_mon,out_mon);
       end
-
-     else if( out_mon.o_pslverr && out_mon.o_pready)begin
-	in_mon.o_pslverr = in_mon.i_pwrite?((in_mon.i_paddr[`AW-1:`ADDR_LSB]==3 || in_mon.i_paddr[`AW-1:`ADDR_LSB] == 4)?1:0) :((in_mon.i_paddr[`AW-1:`ADDR_LSB]==1)?1:0);
-        if(in_mon.i_pwrite == out_mon.i_pwrite && in_mon.i_paddr == out_mon.i_paddr && in_mon.o_pslverr == out_mon.o_pslverr) 
-	        match++;
-	else
-	        mismatch++;
-	value_display(in_mon,out_mon);
-     end
-	    
-     else begin
-       if(in_mon.i_psel && in_mon.i_penable  && !out_mon.o_pready) begin
-        in_mon.o_pready = 1;
-        case (in_mon.i_pwrite)
-          0:  // read operation 
-           begin
-	      if (in_mon.i_paddr [`AW-1:`ADDR_LSB] >= 0 && in_mon.i_paddr [`AW-1:`ADDR_LSB] != 1 && in_mon.i_paddr [`AW-1:`ADDR_LSB] <= 4) 
-                 begin
-                  in_mon.o_prdata = apb_reg[in_mon.i_paddr[`AW-1:`ADDR_LSB]];
-                  `uvm_info("RDATA", $sformatf("apb_Reg[%0d] = %0h", in_mon.i_paddr[`AW-1:`ADDR_LSB], apb_reg[in_mon.i_paddr[`AW-1:`ADDR_LSB]]),UVM_LOW)
-                  in_mon.o_pslverr = 0;
-		 
-                end
-
-	      else if (in_mon.i_paddr [`AW-1:`ADDR_LSB] == 1)
-		       begin in_mon.o_prdata = 0; in_mon.o_pslverr = 1; end
-
-	       
-	       else
-		 begin `uvm_error("i_paddr is a reserved address","I_PADDR") end
- 
-              in_mon.o_pslverr = 0;
-		  in_mon.o_pready = 0;
-              if(in_mon.i_paddr == out_mon.i_paddr && in_mon.o_prdata == out_mon.o_prdata && in_mon.o_pslverr == out_mon.o_pslverr && in_mon.o_pready == out_mon.o_pready) 
-	       in_mon.o_pready = 0;
-               if(in_mon.i_paddr == out_mon.i_paddr && in_mon.o_prdata == out_mon.o_prdata && in_mon.o_pslverr == out_mon.o_pslverr && in_mon.o_pready == out_mon.o_pready) 
-	              match++;
-	      else
-	              mismatch++;
-            end    
-
-	  1: begin
-	       if (in_mon.i_paddr[`AW-1:`ADDR_LSB] <= 2) begin
-                   foreach (in_mon.i_pstrb[i])  begin
-		     if (in_mon.i_pstrb[i]) 
-		       for (int j = 8 * i; j <= (8 * i) + 7; j++)begin 
-			       apb_reg[in_mon.i_paddr[`AW-1:`ADDR_LSB]][j] = in_mon.i_pwdata[j];
-				`uvm_info("check_wdata", $sformatf("i_strb[%0d] = %0d --> apb_reg[%0d][%0d] = %0h", i, in_mon.i_pstrb[i],in_mon.i_paddr[`AW-1:`ADDR_LSB], j,apb_reg[i][j]), UVM_LOW)		
-		
-		     end
+      else begin
+	      if(in_mon.read_write)begin
+		      mem[in_mon.apb_write_paddr]=in_mon.apb_write_data;
+	      end
+	      else begin
+		      apb_read_paddr=in_mon.apb_write_paddr;
+		      in_mon.apb_read_data_out=mem[in_mon.apb_read_paddr];
+		      
                   end
-                  
-                  `uvm_info("WDATA", $sformatf("apb_Reg[%0d] = %0h", in_mon.i_paddr[`AW-1:`ADDR_LSB], apb_reg[in_mon.i_paddr[`AW-1:`ADDR_LSB]]),UVM_LOW)
-		    in_mon.o_pslverr = 0;
-	         end
-
-	       else if (in_mon.i_paddr[`AW-1:`ADDR_LSB] == 3 || in_mon.i_paddr[`AW-1:`ADDR_LSB] == 4 )
-		       begin in_mon.o_prdata = 0; in_mon.o_pslverr = 1; end
-
-	       else 
-	        begin  `uvm_error("i_paddr is a reserved address","I_PADDR") end     
-             
-                
-	      in_mon.o_pready = 0;
-              in_mon.o_pslverr = 0;
-              if(in_mon.i_paddr == out_mon.i_paddr && in_mon.i_pwrite == out_mon.i_pwrite && in_mon.i_pstrb == out_mon.i_pstrb && in_mon.o_pslverr == out_mon.o_pslverr && in_mon.o_pready == out_mon.o_pready) 
-	              match++;
-	      else 
-	              mismatch++;
- 
-              end
-	default : $display("P_write is invalid !!");       
-        endcase
-
-//   apb_reg[4] = in_mon.i_hw_sts ;  // Driven by HW interface status signal...
-
-   // Drive all HW interface control signals
- //  in_mon.o_hw_ctl = apb_reg[0] ;
-
-	      value_display(in_mon,out_mon);
-       end // end of if -> signal check
       end
-    end // end of wait
-  end // end of forever
+
+    
 endtask
