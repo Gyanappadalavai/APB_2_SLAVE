@@ -16,7 +16,7 @@ class apb_environment extends uvm_env;
 	//declaring handles for testbench components under environment
 	apb_active_agent a_agent_h;
 	apb_passive_agent p_agent_h;
-	apb_coverage cvg_h;
+	//apb_coverage cvg_h;
 	apb_scoreboard scb_h;
 
 	//declaring functions
@@ -36,15 +36,12 @@ function void apb_environment::build_phase(uvm_phase phase);
 	super.build_phase(phase);
 	a_agent_h = apb_active_agent::type_id::create("a_agent_h", this);
 	p_agent_h = apb_passive_agent::type_id::create("p_agent_h", this);
-	cvg_h = apb_coverage::type_id::create("cvg_h", this);
 	scb_h = apb_scoreboard::type_id::create("scb_h", this);
 endfunction
 
 //defining connect phase
 function void apb_environment::connect_phase(uvm_phase phase);
 	super.connect_phase(phase);
-	a_agent_h.in_mon_h.ip_mon_port.connect(cvg_h.ip_cvg_imp);
 	a_agent_h.in_mon_h.ip_mon_port.connect(scb_h.ip_scb_imp);
-	p_agent_h.out_mon_h.op_mon_port.connect(cvg_h.op_cvg_imp);
 	p_agent_h.out_mon_h.op_mon_port.connect(scb_h.op_scb_imp);
 endfunction
