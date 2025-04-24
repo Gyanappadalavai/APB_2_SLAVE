@@ -1,4 +1,4 @@
-interface apb_intf(input bit pclk, presetn);
+interface apb_interface(input bit pclk, presetn);
   logic  transfer;
   logic read_write;
   logic apb_write_paddr[`AW-1:0];
