@@ -45,3 +45,31 @@ class apb_test extends uvm_test;
   endfunction
 
 endclass:apb_test
+
+
+class write_test extends apb_test;
+  `uvm_component_utils(apb_test)
+   writesl0 seq1_h;
+
+  function new(string name = "apb_test",uvm_component parent=null);
+    super.new(name,parent);
+  endfunction : new
+
+
+  virtual function void build_phase(uvm_phase phase);
+    super.build_phase(phase);
+      seq1_h = writesl0::type_id::create("seq1_h");
+  endfunction : build_phase
+  
+  task run_phase(uvm_phase phase);
+    phase.raise_objection(this);
+    `uvm_info("write sel1 ","Inside  writesel 0 RUN _PHASE",UVM_HIGH)
+   `uvm_info(get_type_name(),$sformatf("------ !!  apb_rr_test  !! -------"),UVM_LOW)
+          seq1_h.start(env_h.a_agent_h.seqr_h);
+    phase.drop_objection(this);
+    phase.phase_done.set_drain_time(this, 50);
+  endtask : run_phase
+  endfunction
+
+                             
+
