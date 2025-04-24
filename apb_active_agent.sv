@@ -19,7 +19,7 @@ class apb_active_agent extends uvm_agent;
         extern function new(string name = "apb_active_agent", uvm_component parent);
         extern function void build_phase(uvm_phase phase);
         extern function void connect_phase(uvm_phase phase);
-endclass        
+                endclass       
 
 function apb_active_agent::new(string name = "apb_active_agent", uvm_component parent);
         super.new(name, parent);
