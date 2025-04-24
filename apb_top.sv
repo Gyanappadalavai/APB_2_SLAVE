@@ -15,29 +15,29 @@ import uvm_pkg::*;
 `include "apb_defines.svh"
 `include "apb_package.sv"
 `include "apb_interface.sv"
-`include "apb_slave.sv"
+//`include "apb_slave.sv"
 module apb_top;
 
   //declaring clock and reset
-  bit PCLK;
-  bit PRST;
+  bit pclk;
+  bit presetn;
 	
   //defining clock generation
   initial
   begin
-    PCLK <= 0;
-      forever #5 PCLK = ~PCLK;  
+    pclk <= 0;
+      forever #5 pclk = ~pclk;  
   end
 
   //driving reset
   initial
     begin
-   PRST = 0;
-#80;  PRST = 1;
-#100; PRST = 0;
-#20; PRST = 1;
+    presetn = 0;
+    #10;  presetn = 1;
+    #10; presetn = 0;
+    #10; presetn = 1;
   end
-
+/*
   //Instantiating DUT
    apb_slave#(32,5) DUT (
 		 .pclk(PCLK),
@@ -54,19 +54,17 @@ module apb_top;
 		.o_hw_ctl(intf_inst.o_hw_ctl),
 		.i_hw_sts(intf_inst.i_hw_sts)
 	         );
-
+*/
   //Instantiating Interface
   apb_interface intf_inst(
-	  .PCLK(PCLK),
-	  .PRST(PRST));
+	  .pclk(pclk),
+	  .presetn(presetn));
 
   //defining config db to access variables inside testbench components
   initial
     begin
-	    uvm_config_db#(virtual apb_interface.drv_mp)::set(null, "*", "vif_drv", intf_inst.drv_mp);
-	    uvm_config_db#(virtual apb_interface.mon_ip_mp)::set(null, "*", "vif_mon_in", intf_inst.mon_ip_mp);
-	    uvm_config_db#(virtual apb_interface.mon_op_mp)::set(null, "*", "vif_mon_out", intf_inst.mon_op_mp);
-	     
+	    uvm_config_db#(virtual apb_interface.drv_mp)::set(null, "*", "vif", intf_inst);
+	   
              $dumpfile("dump.vcd");
              $dumpvars();
       
