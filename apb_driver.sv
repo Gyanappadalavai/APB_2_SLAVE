@@ -16,7 +16,7 @@ class apb_driver extends uvm_driver #(apb_sequence_item);
 
         //declaring a virtual interface for driver
         virtual apb_interface.drv_mp vif;
-	virtual apb_interface apb_vif;
+	
         //declaring a handle for sequence item
         apb_sequence_item packet;
 
@@ -36,7 +36,7 @@ endclass
         function void apb_driver::build_phase(uvm_phase phase);
                 super.build_phase(phase);
 
-                if(!uvm_config_db #(virtual apb_interface.drv_mp) :: get (this, "", "vif_drv", vif))
+                if(!uvm_config_db #(virtual apb_interface.drv_mp) :: get (this, "", "vif", vif))
                 begin
                         `uvm_fatal(get_type_name(), "Unable to get the virtual interface");
                 end
@@ -61,60 +61,23 @@ endclass
         //driving inputs to DUT
         task apb_driver::drive();
                 @(posedge vif.drv_cb);
-
                 begin
-	          if(vif.drv_cb.PRST == 1)begin
-			// IDLE PHASE
-			vif.drv_cb.i_psel <= 0;
-			vif.drv_cb.i_penable <= 0;
-			
-		//	packet.print();
-		 	repeat(1)@(vif.drv_cb);
-			
-			// SETUP PHASE 
-			vif.drv_cb.i_psel <= 1;
-			vif.drv_cb.i_penable <= 0;
-			vif.drv_cb.i_paddr <= packet.i_paddr;
-			vif.drv_cb.i_pwrite <= packet.i_pwrite;
-			vif.drv_cb.i_pwdata <= packet.i_pwdata;
-			vif.drv_cb.i_pstrb <= packet.i_pstrb;
-			
-		 	repeat(1)@(vif.drv_cb);
-			
-			// ACCESS PHASE 
-			vif.drv_cb.i_psel <= 1;
-			vif.drv_cb.i_penable <= 1;
-			vif.drv_cb.i_paddr <= packet.i_paddr;
-			vif.drv_cb.i_pwrite <= packet.i_pwrite;
-			vif.drv_cb.i_pwdata <= packet.i_pwdata;
-			vif.drv_cb.i_pstrb <= packet.i_pstrb;
-			
-			while(!vif.drv_cb.o_pready) begin
-          			@(posedge vif.drv_cb);
-           			 `uvm_info("WDRIVER",$sformatf("Wating for ready signal"),UVM_LOW)
-            		 end
-                        
-			@(negedge vif.drv_cb.o_pready)	begin			
-			vif.drv_cb.i_psel <= 0;
-			vif.drv_cb.i_penable <= 0;
-			vif.drv_cb.i_paddr <= packet.i_paddr;
-			vif.drv_cb.i_pwrite <= packet.i_pwrite;
-			vif.drv_cb.i_pwdata <= packet.i_pwdata;
-			vif.drv_cb.i_pstrb <= packet.i_pstrb;
-			end
-			`uvm_info("driver", $sformatf("---Packet driven by Driver---"), UVM_LOW);	
-			packet.print();
-                     
-                    end 	
-		
-                   else begin
+		   if(vif.drv_cb.presetn == 0)begin
+			vif.drv_cb.transfer <= 0;
+			vif.drv_cb.read_write <= 0;
+	           end
+		   else begin 
+			vif.drv_cb.transfer <= packet.transfer;
+			vif.drv_cb.read_write <= packet.read_write;
+			if(vif.drv_cb.read_write)
+			  begin
+			    vif.drv_cb.apb_write_paddr  <= packet.apb_write_paddr ;
+			    vif.drv_cb.apb_write_data   <= packet.apb_write_data  ;
+			   end
+			   else
+                             vif.drv_cb.apb_read_paddr    <= packet.apb_read_paddr   ;
 
-			vif.drv_cb.i_psel <= 1;
-			vif.drv_cb.i_penable <= 1;
-			vif.drv_cb.i_paddr <= packet.i_paddr;
-			vif.drv_cb.i_pwrite <= packet.i_pwrite;
-			vif.drv_cb.i_pwdata <= packet.i_pwdata;
-			vif.drv_cb.i_pstrb <= packet.i_pstrb;
-		   end	
+		        packet.print();
+
                 end
         endtask
