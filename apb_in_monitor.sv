@@ -45,12 +45,12 @@ endclass
 
 	//defining run task
 	task apb_ip_monitor::run_phase(uvm_phase phase);
-		repeat(2) @(vif.mon_in_cb);
+		repeat(2) @(vif.mon_op_cb);
 		forever
 		begin	
 			packet = apb_sequence_item::type_id::create("packet", this);
 
-			@(vif.mon_in_cb)
+			@(vif.mon_op_cb)
 			begin
 			    packet.transfer <= vif.mon_op_cb.transfer;
 			    packet.read_write <= vif.mon_op_cb.read_write;
