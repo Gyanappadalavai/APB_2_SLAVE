@@ -37,7 +37,7 @@ endclass
 	function void apb_op_monitor::build_phase(uvm_phase phase);
 		super.build_phase(phase);
 
-		if(!uvm_config_db #(virtual apb_interface.mon_op_mp) :: get(this, "", "vif_mon_out", vif))
+		if(!uvm_config_db #(virtual apb_interface.mon_op_mp) :: get(this, "", "vif", vif))
 			`uvm_fatal("monitor", "Unable to  virtual interface")
 	endfunction
 
@@ -51,19 +51,12 @@ endclass
 
 			@(vif.mon_op_cb)
 			begin	
-				packet.i_paddr = vif.mon_op_cb.i_paddr;
-				packet.i_pwrite = vif.mon_op_cb.i_pwrite;
-				packet.i_psel = vif.mon_op_cb.i_psel;
-				packet.i_penable = vif.mon_op_cb.i_penable;
-				packet.i_pwdata = vif.mon_op_cb.i_pwdata;
-				packet. i_pstrb = vif.mon_op_cb.i_pstrb;
-				
-				packet.o_prdata = vif.mon_op_cb.o_prdata;
-				packet.o_pslverr = vif.mon_op_cb.o_pslverr;
-				packet.o_pready = vif.mon_op_cb.o_pready;
-				packet.o_hw_ctl = vif.mon_op_cb.o_hw_ctl;
-		  		packet.i_hw_sts = vif.mon_op_cb.i_hw_sts;
-					
+				packet.transfer = vif.mon_op_cb.transfer;
+				packet.read_write = vif.mon_op_cb.read_write;
+				packet.apb_write_paddr = vif.mon_op_cb.apb_write_paddr;
+				packet.apb_write_data = vif.mon_op_cb.apb_write_data;
+				packet.apb_read_paddr = vif.mon_op_cb.apb_read_paddr;
+				packet. apb_read_data_out = vif.mon_op_cb.apb_read_data_out;
 
 				`uvm_info("output monitor", $sformatf("---Output monitor---"), UVM_LOW);	
 				 packet.print();
